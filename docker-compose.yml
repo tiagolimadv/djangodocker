@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:alpine3.15
+    ports:
+      - "5432:5432"
+    networks:
+      - backend
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=app
+    volumes:
+      - db-data:/var/lib/postgresql/data/
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    user: "${UID}:${GID}"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=app
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    ports:
+      - "8000:8000"
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - static:/home/app/static
+    depends_on:
+      - db
+  nginx:
+    build: ./nginx
+    volumes:
+      - static:/home/app/static
+    networks:
+      - frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  static:
+  db-data:
